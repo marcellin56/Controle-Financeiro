@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MOCK_CLIENTES } from './constants';
 import { Cliente, StatusCliente, Configuracoes } from './types';
 import Sidebar from './components/Sidebar';
@@ -12,17 +12,35 @@ import FormCliente from './components/FormCliente';
 import { Plus, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [clientes, setClientes] = useState<Cliente[]>(MOCK_CLIENTES);
+  // Inicialização do estado com recuperação do localStorage
+  const [clientes, setClientes] = useState<Cliente[]>(() => {
+    const saved = localStorage.getItem('mag_system_clientes');
+    return saved ? JSON.parse(saved) : MOCK_CLIENTES;
+  });
+
   const [activeSection, setActiveSection] = useState('dashboard');
   const [showForm, setShowForm] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const [config, setConfig] = useState<Configuracoes>({
-    nomeEmpresa: 'Mag System',
-    email: 'contato@magsystem.com.br',
-    telefone: '(11) 99999-9999',
-    logoUrl: null
+  // Inicialização das configurações com recuperação do localStorage
+  const [config, setConfig] = useState<Configuracoes>(() => {
+    const saved = localStorage.getItem('mag_system_config');
+    return saved ? JSON.parse(saved) : {
+      nomeEmpresa: 'Mag System',
+      email: 'contato@magsystem.com.br',
+      telefone: '(11) 99999-9999',
+      logoUrl: null
+    };
   });
+
+  // Efeitos para salvar dados automaticamente
+  useEffect(() => {
+    localStorage.setItem('mag_system_clientes', JSON.stringify(clientes));
+  }, [clientes]);
+
+  useEffect(() => {
+    localStorage.setItem('mag_system_config', JSON.stringify(config));
+  }, [config]);
 
   const handleAddCliente = (novoCliente: Cliente) => {
     setClientes(prev => [...prev, novoCliente]);
