@@ -1,18 +1,19 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mag System - Controle Financeiro</title>
+    <!-- Tailwind CSS via CDN para simplificar o setup, mas o React é buildado pelo Vite -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['"Plus Jakarta Sans"', 'sans-serif'], // Fonte mais moderna e geométrica
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             },
             colors: {
               primary: {
@@ -21,7 +22,7 @@
                 200: '#bfdbfe',
                 300: '#93c5fd',
                 400: '#60a5fa',
-                500: '#3b82f6', // Azul vibrante moderno
+                500: '#3b82f6',
                 600: '#2563eb',
                 700: '#1d4ed8',
                 800: '#1e40af',
@@ -52,7 +53,7 @@
                 600: '#475569',
                 700: '#334155',
                 800: '#1e293b',
-                900: '#0f172a', // Quase preto
+                900: '#0f172a',
               },
               surface: '#ffffff'
             },
@@ -67,43 +68,28 @@
     <style>
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #f1f5f9; /* Slate 100 */
+        background-color: #f1f5f9;
         background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
         background-size: 24px 24px;
       }
-      
-      /* Smooth scrolling */
-      html {
-        scroll-behavior: smooth;
-      }
-
-      /* Custom scrollbar refine */
-      .custom-scrollbar::-webkit-scrollbar {
-        height: 5px;
-        width: 5px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
+      html { scroll-behavior: smooth; }
+      .custom-scrollbar::-webkit-scrollbar { height: 5px; width: 5px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react/": "https://esm.sh/react@18.3.1/",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
-    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom",
-    "lucide-react": "https://esm.sh/lucide-react@0.378.0",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
     "react-leaflet": "https://esm.sh/react-leaflet@^5.0.0",
-    "leaflet": "https://esm.sh/leaflet@^1.9.4"
+    "leaflet": "https://esm.sh/leaflet@^1.9.4",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
   }
 }
 </script>

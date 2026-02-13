@@ -15,7 +15,6 @@ export interface Cliente {
   cidade: string;
   endereco: string;
   observacoes?: string;
-  coords?: { lat: number; lng: number };
 }
 
 export interface Configuracoes {

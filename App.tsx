@@ -35,16 +35,15 @@ const App: React.FC = () => {
     ));
   };
 
-  // Função para finalizar serviço e realizar pagamento completo (quitação)
   const handleFinalizeClient = (id: string) => {
     setClientes(prev => prev.map(c => {
       if (c.id === id) {
         return {
           ...c,
           status: 'concluido',
-          valorPago: c.valorTotal, // Pagamento completo
-          valorRestante: 0,        // Zera pendência
-          percentualPago: 100      // 100% pago
+          valorPago: c.valorTotal,
+          valorRestante: 0,
+          percentualPago: 100
         };
       }
       return c;
@@ -95,24 +94,24 @@ const App: React.FC = () => {
               <AgendaAtendimentos clientes={clientes} />
             </div>
 
-            {/* Seção 3: Dados Analíticos e Lista Recente */}
+            {/* Seção 3: Dados e Lista */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* Coluna Principal: Lista de Clientes */}
-              <div className="xl:col-span-2 space-y-6">
-                <ClientesList 
-                    title="Atendimentos Recentes" 
-                    clientes={activeClients.slice(0, 5)} 
-                    onUpdateStatus={handleUpdateStatus}
-                    onFinalize={handleFinalizeClient}
-                />
-              </div>
-              
-              {/* Coluna Lateral: Estatísticas */}
-              <div className="xl:col-span-1">
-                 <div className="sticky top-6">
-                   <StatsGrid clientes={clientes} />
-                 </div>
-              </div>
+               {/* Coluna Principal: Lista de Clientes */}
+               <div className="xl:col-span-2 space-y-4">
+                  <ClientesList 
+                      title="Atendimentos Recentes" 
+                      clientes={activeClients.slice(0, 5)} 
+                      onUpdateStatus={handleUpdateStatus}
+                      onFinalize={handleFinalizeClient}
+                  />
+               </div>
+               
+               {/* Coluna Lateral: Estatísticas */}
+               <div className="xl:col-span-1">
+                  <div className="sticky top-6">
+                    <StatsGrid clientes={clientes} />
+                  </div>
+               </div>
             </div>
           </div>
         );
