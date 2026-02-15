@@ -250,7 +250,7 @@ const App: React.FC = () => {
                   Ver tudo &rarr;
                 </button>
               </div>
-              <AgendaAtendimentos clientes={clientes} />
+              <AgendaAtendimentos clientes={clientes} onEdit={handleEditClick} />
             </div>
 
             {/* Seção 3: Dados e Lista */}
@@ -315,7 +315,7 @@ const App: React.FC = () => {
                 title="Clientes Concluídos" 
                 clientes={completedClients} 
                 onUpdateStatus={handleUpdateStatus} 
-                readOnly
+                onEdit={handleEditClick}
              />
           </div>
         );
@@ -326,7 +326,7 @@ const App: React.FC = () => {
                     <h2 className="text-2xl font-bold text-slate-800">Agenda de Atendimentos</h2>
                     <p className="text-slate-500 text-sm">Planeje sua semana e não perca prazos.</p>
                 </div>
-                <AgendaAtendimentos clientes={clientes} />
+                <AgendaAtendimentos clientes={clientes} onEdit={handleEditClick} />
             </div>
         );
       case 'financeiro':

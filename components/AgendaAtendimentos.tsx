@@ -1,11 +1,11 @@
-
 import React, { useMemo } from 'react';
 import { Cliente } from '../types';
 import { formatCurrency, formatDate } from '../constants';
-import { Calendar, Clock, MessageCircle, MapPin, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MessageCircle, MapPin, ChevronRight, Edit } from 'lucide-react';
 
 interface AgendaProps {
   clientes: Cliente[];
+  onEdit?: (cliente: Cliente) => void;
 }
 
 const handleWhatsApp = (cliente: Cliente) => {
@@ -20,7 +20,7 @@ const openGoogleMaps = (endereco: string, cidade: string) => {
   window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
 };
 
-const AgendaCard: React.FC<{ cliente: Cliente, isToday?: boolean }> = ({ cliente, isToday }) => (
+const AgendaCard: React.FC<{ cliente: Cliente, isToday?: boolean, onEdit?: (c: Cliente) => void }> = ({ cliente, isToday, onEdit }) => (
   <div className={`p-5 rounded-2xl border mb-3 transition-all duration-300 hover:shadow-lg group relative overflow-hidden ${
       isToday 
       ? 'bg-gradient-to-r from-white to-primary-50/50 border-primary-200' 
@@ -65,24 +65,35 @@ const AgendaCard: React.FC<{ cliente: Cliente, isToday?: boolean }> = ({ cliente
           </div>
        </div>
 
-       <button 
-         onClick={() => handleWhatsApp(cliente)}
-         className={`
-           w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all
-           ${isToday 
-             ? 'bg-primary-100 text-primary-700 hover:bg-primary-200' 
-             : 'bg-slate-50 text-slate-600 hover:bg-success-50 hover:text-success-700'
-            }
-         `}
-       >
-          <MessageCircle size={16} />
-          <span>Confirmar</span>
-       </button>
+       <div className="flex gap-2 w-full sm:w-auto">
+         {onEdit && (
+            <button 
+                onClick={() => onEdit(cliente)}
+                className="w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-primary-50 hover:text-primary-600 transition-colors flex items-center justify-center"
+                title="Editar"
+            >
+                <Edit size={16} />
+            </button>
+         )}
+         <button 
+            onClick={() => handleWhatsApp(cliente)}
+            className={`
+            flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all
+            ${isToday 
+                ? 'bg-primary-100 text-primary-700 hover:bg-primary-200' 
+                : 'bg-slate-50 text-slate-600 hover:bg-success-50 hover:text-success-700'
+                }
+            `}
+         >
+            <MessageCircle size={16} />
+            <span>Confirmar</span>
+         </button>
+       </div>
     </div>
   </div>
 );
 
-const AgendaAtendimentos: React.FC<AgendaProps> = ({ clientes }) => {
+const AgendaAtendimentos: React.FC<AgendaProps> = ({ clientes, onEdit }) => {
   const { hoje, proximos7dias } = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
     const nextWeekDate = new Date();
@@ -110,7 +121,7 @@ const AgendaAtendimentos: React.FC<AgendaProps> = ({ clientes }) => {
         <div className="bg-white p-2 rounded-3xl shadow-soft border border-slate-100 min-h-[200px]">
           {hoje.length > 0 ? (
             <div className="p-2">
-                 {hoje.map(c => <AgendaCard key={c.id} cliente={c} isToday />)}
+                 {hoje.map(c => <AgendaCard key={c.id} cliente={c} isToday onEdit={onEdit} />)}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center py-12 text-center">
@@ -135,7 +146,7 @@ const AgendaAtendimentos: React.FC<AgendaProps> = ({ clientes }) => {
         <div className="bg-white p-2 rounded-3xl shadow-soft border border-slate-100 min-h-[200px]">
           {proximos7dias.length > 0 ? (
             <div className="p-2">
-               {proximos7dias.map(c => <AgendaCard key={c.id} cliente={c} />)}
+               {proximos7dias.map(c => <AgendaCard key={c.id} cliente={c} onEdit={onEdit} />)}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center py-12 text-center">

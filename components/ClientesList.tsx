@@ -123,32 +123,34 @@ const MobileCard: React.FC<MobileCardProps> = ({ cliente, onUpdateStatus, onFina
       </div>
     </div>
 
-    <div className="grid grid-cols-2 gap-3">
+    <div className="flex gap-2">
       <button 
         onClick={() => handleWhatsApp(cliente)}
-        className="flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-success-600 hover:border-success-200 hover:bg-success-50 rounded-xl font-semibold transition-all text-sm"
+        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-success-600 hover:border-success-200 hover:bg-success-50 rounded-xl font-semibold transition-all text-sm"
       >
         <MessageCircle size={18} />
-        WhatsApp
+        <span className="hidden sm:inline">WhatsApp</span>
+        <span className="sm:hidden">Wpp</span>
       </button>
-      {!readOnly && cliente.status !== 'concluido' ? (
+
+      {!readOnly && onEdit && (
+        <button
+          onClick={() => onEdit(cliente)}
+          className="px-3 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl font-semibold transition-all"
+          title="Editar"
+        >
+            <Edit size={18} />
+        </button>
+      )}
+
+      {!readOnly && cliente.status !== 'concluido' && (
         <button 
           onClick={() => onFinalize ? onFinalize(cliente.id) : onUpdateStatus(cliente.id, 'concluido')}
-          className="flex items-center justify-center gap-2 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-semibold transition-all shadow-lg shadow-primary-500/30 text-sm"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-semibold transition-all shadow-lg shadow-primary-500/30 text-sm"
         >
           {onFinalize ? <CheckCheck size={18} /> : <Check size={18} />}
           {onFinalize ? "Finalizar" : "Concluir"}
         </button>
-      ) : (
-          !readOnly && onEdit && (
-            <button 
-            onClick={() => onEdit(cliente)}
-            className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl font-semibold transition-all text-sm"
-            >
-                <Edit size={18} />
-                Editar
-            </button>
-          )
       )}
     </div>
   </div>
