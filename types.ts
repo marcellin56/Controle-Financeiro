@@ -1,7 +1,15 @@
 export type StatusCliente = 'aguardando' | 'confirmado' | 'concluido' | 'cancelado';
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string; // Em um app real, nunca salve senhas em texto puro
+}
+
 export interface Cliente {
   id: string;
+  userId: string; // Vincula o cliente a um usuário específico
   nome: string;
   telefone: string;
   whatsapp: string;

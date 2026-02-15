@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Cliente, StatusCliente } from '../types';
 import { generateId, CIDADES_PARAIBA } from '../constants';
@@ -7,9 +6,10 @@ import { X, Save } from 'lucide-react';
 interface FormClienteProps {
   onClose: () => void;
   onSave: (cliente: Cliente) => void;
+  initialData?: Cliente | null;
 }
 
-const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave }) => {
+const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave, initialData }) => {
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -25,6 +25,25 @@ const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave }) => {
   });
 
   const [percentual, setPercentual] = useState(0);
+
+  // Carregar dados se for edição
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        nome: initialData.nome,
+        telefone: initialData.telefone,
+        whatsapp: initialData.whatsapp,
+        servico: initialData.servico,
+        valorTotal: initialData.valorTotal,
+        valorPago: initialData.valorPago,
+        dataAtendimento: initialData.dataAtendimento,
+        status: initialData.status,
+        cidade: initialData.cidade,
+        endereco: initialData.endereco,
+        observacoes: initialData.observacoes || ''
+      });
+    }
+  }, [initialData]);
 
   useEffect(() => {
     if (formData.valorTotal > 0) {
@@ -46,14 +65,15 @@ const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave }) => {
     e.preventDefault();
     const valorRestante = formData.valorTotal - formData.valorPago;
     
-    const novoCliente: Cliente = {
-      id: generateId(),
+    // Se initialData existe, mantemos o ID, senão geramos um novo
+    const clienteToSave: Cliente = {
+      id: initialData ? initialData.id : generateId(),
       ...formData,
       valorRestante,
       percentualPago: percentual
     };
 
-    onSave(novoCliente);
+    onSave(clienteToSave);
   };
 
   return (
@@ -61,7 +81,9 @@ const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave }) => {
       {/* Mobile: Full screen, Desktop: Rounded card */}
       <div className="bg-white w-full h-full md:h-auto md:rounded-xl shadow-2xl md:max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col">
         <div className="flex justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50 shrink-0">
-          <h2 className="text-lg md:text-xl font-bold text-slate-800">Novo Cliente</h2>
+          <h2 className="text-lg md:text-xl font-bold text-slate-800">
+            {initialData ? 'Editar Cliente' : 'Novo Cliente'}
+          </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-200">
             <X size={24} />
           </button>
@@ -180,7 +202,7 @@ const FormCliente: React.FC<FormClienteProps> = ({ onClose, onSave }) => {
             </button>
             <button onClick={handleSubmit} type="button" className="px-6 py-2 bg-success-500 hover:bg-success-600 text-white rounded-lg font-medium shadow-md shadow-success-500/30 flex items-center space-x-2 transition-all">
               <Save size={18} />
-              <span>Salvar</span>
+              <span>{initialData ? 'Atualizar' : 'Salvar'}</span>
             </button>
         </div>
       </div>

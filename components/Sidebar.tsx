@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   LayoutDashboard, 
@@ -11,7 +10,7 @@ import {
   X,
   ChevronRight
 } from 'lucide-react';
-import { Configuracoes } from '../types';
+import { Configuracoes, User } from '../types';
 
 interface SidebarProps {
   activeSection: string;
@@ -19,9 +18,11 @@ interface SidebarProps {
   config: Configuracoes;
   mobile?: boolean;
   onCloseMobile?: () => void;
+  currentUser?: User | null;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate, config, mobile, onCloseMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate, config, mobile, onCloseMobile, currentUser, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'clientes', label: 'Clientes', icon: Users },
@@ -114,15 +115,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate, config, mo
       <div className="p-6 mt-auto">
         <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 backdrop-blur-sm">
            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                AD
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                {currentUser ? currentUser.name.substring(0,2).toUpperCase() : 'US'}
               </div>
-              <div>
-                <p className="text-xs font-bold text-white">Admin User</p>
-                <p className="text-[10px] text-slate-400">Gerente</p>
+              <div className="overflow-hidden">
+                <p className="text-xs font-bold text-white truncate">{currentUser ? currentUser.name : 'Usuário'}</p>
+                <p className="text-[10px] text-slate-400 truncate">{currentUser ? currentUser.email : 'usuario@email.com'}</p>
               </div>
            </div>
-           <button className="w-full flex items-center justify-center space-x-2 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 text-xs font-medium border border-transparent hover:border-white/10">
+           <button 
+             onClick={onLogout}
+             className="w-full flex items-center justify-center space-x-2 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 text-xs font-medium border border-transparent hover:border-white/10"
+           >
             <LogOut size={14} />
             <span>Sair da Conta</span>
           </button>

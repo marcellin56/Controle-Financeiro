@@ -1,13 +1,14 @@
-
-import React from 'react';
+import React, { useRef } from 'react';
 import { Cliente, StatusCliente } from '../types';
 import { formatCurrency, formatDate } from '../constants';
-import { MessageCircle, Check, MapPin, Calendar, CheckCheck, MoreHorizontal, ArrowRight } from 'lucide-react';
+import { MessageCircle, Check, MapPin, Calendar, CheckCheck, Edit, Download, Upload, FileSpreadsheet } from 'lucide-react';
 
 interface ClientesListProps {
   clientes: Cliente[];
   onUpdateStatus: (id: string, newStatus: StatusCliente) => void;
   onFinalize?: (id: string) => void;
+  onEdit?: (cliente: Cliente) => void;
+  onImport?: (file: File) => void;
   title: string;
   readOnly?: boolean;
 }
@@ -56,15 +57,16 @@ const getStatusBadge = (status: StatusCliente) => {
   );
 };
 
-// ... MobileCard component mantido com estilos similares atualizados ...
+// ... MobileCard component ...
 interface MobileCardProps {
   cliente: Cliente;
   onUpdateStatus: (id: string, newStatus: StatusCliente) => void;
   onFinalize?: (id: string) => void;
+  onEdit?: (cliente: Cliente) => void;
   readOnly: boolean;
 }
 
-const MobileCard: React.FC<MobileCardProps> = ({ cliente, onUpdateStatus, onFinalize, readOnly }) => (
+const MobileCard: React.FC<MobileCardProps> = ({ cliente, onUpdateStatus, onFinalize, onEdit, readOnly }) => (
   <div className="bg-white rounded-2xl shadow-soft p-5 mb-4 border border-slate-100 flex flex-col gap-4">
     <div className="flex justify-between items-start">
       <div className="flex items-center gap-3">
@@ -129,7 +131,7 @@ const MobileCard: React.FC<MobileCardProps> = ({ cliente, onUpdateStatus, onFina
         <MessageCircle size={18} />
         WhatsApp
       </button>
-      {!readOnly && cliente.status !== 'concluido' && (
+      {!readOnly && cliente.status !== 'concluido' ? (
         <button 
           onClick={() => onFinalize ? onFinalize(cliente.id) : onUpdateStatus(cliente.id, 'concluido')}
           className="flex items-center justify-center gap-2 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-semibold transition-all shadow-lg shadow-primary-500/30 text-sm"
@@ -137,31 +139,123 @@ const MobileCard: React.FC<MobileCardProps> = ({ cliente, onUpdateStatus, onFina
           {onFinalize ? <CheckCheck size={18} /> : <Check size={18} />}
           {onFinalize ? "Finalizar" : "Concluir"}
         </button>
+      ) : (
+          !readOnly && onEdit && (
+            <button 
+            onClick={() => onEdit(cliente)}
+            className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl font-semibold transition-all text-sm"
+            >
+                <Edit size={18} />
+                Editar
+            </button>
+          )
       )}
     </div>
   </div>
 );
 
-const ClientesList: React.FC<ClientesListProps> = ({ clientes, onUpdateStatus, onFinalize, title, readOnly = false }) => {
-  if (clientes.length === 0) {
+const ClientesList: React.FC<ClientesListProps> = ({ clientes, onUpdateStatus, onFinalize, onEdit, onImport, title, readOnly = false }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportCSV = () => {
+    if (!clientes.length) {
+        alert("Não há dados para exportar.");
+        return;
+    }
+
+    const headers = ["ID", "Nome", "Telefone", "Whatsapp", "Servico", "Valor Total", "Valor Pago", "Data", "Status", "Cidade", "Endereco", "Observacoes"];
+    
+    const csvContent = [
+        headers.join(","),
+        ...clientes.map(c => [
+            c.id,
+            `"${c.nome}"`,
+            `"${c.telefone}"`,
+            `"${c.whatsapp}"`,
+            `"${c.servico}"`,
+            c.valorTotal,
+            c.valorPago,
+            c.dataAtendimento,
+            c.status,
+            `"${c.cidade}"`,
+            `"${c.endereco}"`,
+            `"${c.observacoes || ''}"`
+        ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "clientes_mag_system.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImport) {
+        onImport(file);
+    }
+    // Limpar input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  if (clientes.length === 0 && readOnly) {
     return (
       <div className="bg-white rounded-2xl shadow-soft border border-slate-100 p-16 text-center">
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-50 mb-6 border border-slate-100">
             <Calendar className="text-slate-300" size={32} />
         </div>
         <h3 className="text-lg font-bold text-slate-900">Nenhum registro encontrado</h3>
-        <p className="text-slate-500 mt-2 max-w-xs mx-auto">Não há clientes nesta lista no momento. Adicione um novo cliente para começar.</p>
+        <p className="text-slate-500 mt-2 max-w-xs mx-auto">Não há clientes nesta lista no momento.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between px-1">
-         <h3 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h3>
-         <span className="bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-            {clientes.length} Registros
-         </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+         <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h3>
+            <span className="bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                {clientes.length} Registros
+            </span>
+         </div>
+
+         {/* CSV Controls */}
+         {!readOnly && (
+            <div className="flex gap-2">
+                <button 
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 hover:text-primary-600 transition-colors shadow-sm"
+                    title="Baixar CSV"
+                >
+                    <Download size={14} />
+                    <span className="hidden sm:inline">Exportar</span>
+                </button>
+                {onImport && (
+                    <>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            accept=".csv" 
+                            className="hidden" 
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 hover:text-success-600 transition-colors shadow-sm"
+                            title="Upload CSV"
+                        >
+                            <Upload size={14} />
+                            <span className="hidden sm:inline">Importar</span>
+                        </button>
+                    </>
+                )}
+            </div>
+         )}
       </div>
       
       {/* Mobile View */}
@@ -172,6 +266,7 @@ const ClientesList: React.FC<ClientesListProps> = ({ clientes, onUpdateStatus, o
               cliente={cliente} 
               onUpdateStatus={onUpdateStatus}
               onFinalize={onFinalize}
+              onEdit={onEdit}
               readOnly={readOnly}
             />
         ))}
@@ -250,6 +345,15 @@ const ClientesList: React.FC<ClientesListProps> = ({ clientes, onUpdateStatus, o
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                      {!readOnly && onEdit && (
+                         <button
+                            onClick={() => onEdit(cliente)}
+                            className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                            title="Editar"
+                         >
+                            <Edit size={18} />
+                         </button>
+                      )}
                       <button 
                         onClick={() => handleWhatsApp(cliente)}
                         className="p-2 text-slate-400 hover:text-success-600 hover:bg-success-50 rounded-lg transition-all"

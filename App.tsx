@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { MOCK_CLIENTES } from './constants';
-import { Cliente, StatusCliente, Configuracoes } from './types';
+import { MOCK_CLIENTES, generateId } from './constants';
+import { Cliente, StatusCliente, Configuracoes, User } from './types';
 import Sidebar from './components/Sidebar';
 import HeaderCards from './components/HeaderCards';
 import StatsGrid from './components/StatsGrid';
@@ -9,67 +9,203 @@ import AgendaAtendimentos from './components/AgendaAtendimentos';
 import FinanceiroView from './components/FinanceiroView';
 import ConfiguracoesPage from './components/Configuracoes.tsx';
 import FormCliente from './components/FormCliente';
+import Login from './components/Login';
 import { Plus, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
-  // Inicialização do estado com recuperação do localStorage
-  const [clientes, setClientes] = useState<Cliente[]>(() => {
-    const saved = localStorage.getItem('mag_system_clientes');
-    return saved ? JSON.parse(saved) : MOCK_CLIENTES;
+  // Autenticação e Usuário Atual
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('mag_system_current_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  // Estado dos Clientes (Somente do usuário atual)
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  // Configurações (Somente do usuário atual)
+  const [config, setConfig] = useState<Configuracoes>({
+    nomeEmpresa: 'Mag System',
+    email: 'contato@magsystem.com.br',
+    telefone: '(11) 99999-9999',
+    logoUrl: null
   });
 
   const [activeSection, setActiveSection] = useState('dashboard');
   const [showForm, setShowForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Inicialização das configurações com recuperação do localStorage
-  const [config, setConfig] = useState<Configuracoes>(() => {
-    const saved = localStorage.getItem('mag_system_config');
-    return saved ? JSON.parse(saved) : {
-      nomeEmpresa: 'Mag System',
-      email: 'contato@magsystem.com.br',
-      telefone: '(11) 99999-9999',
-      logoUrl: null
-    };
-  });
 
-  // Efeitos para salvar dados automaticamente
+  // Carregar dados quando o usuário muda (Login ou Page Load)
   useEffect(() => {
-    localStorage.setItem('mag_system_clientes', JSON.stringify(clientes));
-  }, [clientes]);
+    if (currentUser) {
+      // 1. Carregar Clientes Globais
+      const allClientsStr = localStorage.getItem('mag_system_clientes');
+      const allClients: Cliente[] = allClientsStr ? JSON.parse(allClientsStr) : [];
+      
+      // 2. Filtrar apenas os do usuário
+      const myClients = allClients.filter(c => c.userId === currentUser.id);
+      setClientes(myClients);
 
-  useEffect(() => {
-    localStorage.setItem('mag_system_config', JSON.stringify(config));
-  }, [config]);
+      // 3. Carregar Configuração do Usuário
+      const configKey = `mag_system_config_${currentUser.id}`;
+      const savedConfig = localStorage.getItem(configKey);
+      if (savedConfig) {
+        setConfig(JSON.parse(savedConfig));
+      } else {
+        // Reset config se não houver
+        setConfig({
+          nomeEmpresa: 'Mag System',
+          email: currentUser.email,
+          telefone: '',
+          logoUrl: null
+        });
+      }
+    } else {
+      setClientes([]);
+    }
+  }, [currentUser]);
 
-  const handleAddCliente = (novoCliente: Cliente) => {
-    setClientes(prev => [...prev, novoCliente]);
+  // Função para salvar clientes no Storage Global preservando dados de outros usuários
+  const saveClientsToStorage = (newClientList: Cliente[]) => {
+    if (!currentUser) return;
+
+    // 1. Pegar todos os clientes do storage
+    const allClientsStr = localStorage.getItem('mag_system_clientes');
+    const allClients: Cliente[] = allClientsStr ? JSON.parse(allClientsStr) : [];
+
+    // 2. Remover os clientes antigos deste usuário da lista global
+    const otherUsersClients = allClients.filter(c => c.userId !== currentUser.id);
+
+    // 3. Combinar (Outros + Novos deste usuário)
+    const updatedGlobalList = [...otherUsersClients, ...newClientList];
+
+    // 4. Salvar
+    localStorage.setItem('mag_system_clientes', JSON.stringify(updatedGlobalList));
+  };
+
+  // Handler de Login
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    localStorage.setItem('mag_system_current_user', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('mag_system_current_user');
+    setClientes([]);
+    setActiveSection('dashboard');
+  };
+
+  // Handlers de Clientes
+  const handleSaveCliente = (clienteData: Cliente) => {
+    if (!currentUser) return;
+
+    // Garantir que o cliente tenha o ID do usuário atual
+    const clienteSalvo = { ...clienteData, userId: currentUser.id };
+
+    const newClientList = [...clientes];
+    const index = newClientList.findIndex(c => c.id === clienteSalvo.id);
+    
+    if (index >= 0) {
+      newClientList[index] = clienteSalvo;
+    } else {
+      newClientList.push(clienteSalvo);
+    }
+
+    setClientes(newClientList);
+    saveClientsToStorage(newClientList); // Persistência
+
     setShowForm(false);
+    setEditingClient(null);
+  };
+
+  const handleEditClick = (cliente: Cliente) => {
+    setEditingClient(cliente);
+    setShowForm(true);
   };
 
   const handleUpdateStatus = (id: string, newStatus: StatusCliente) => {
-    setClientes(prev => prev.map(c => 
+    const updatedList = clientes.map(c => 
       c.id === id ? { ...c, status: newStatus } : c
-    ));
+    );
+    setClientes(updatedList);
+    saveClientsToStorage(updatedList);
   };
 
   const handleFinalizeClient = (id: string) => {
-    setClientes(prev => prev.map(c => {
+    const updatedList = clientes.map(c => {
       if (c.id === id) {
         return {
           ...c,
-          status: 'concluido',
+          status: 'concluido' as StatusCliente,
           valorPago: c.valorTotal,
           valorRestante: 0,
           percentualPago: 100
         };
       }
       return c;
-    }));
+    });
+    setClientes(updatedList);
+    saveClientsToStorage(updatedList);
+  };
+
+  const handleImportCSV = (file: File) => {
+    if (!currentUser) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target?.result as string;
+        if (!text) return;
+
+        const lines = text.split('\n');
+        const newClients: Cliente[] = [];
+
+        // Ignorar cabeçalho (i=1)
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            
+            if (cols && cols.length >= 8) {
+                const clean = (str: string) => str ? str.replace(/^"|"$/g, '').trim() : '';
+                const valorTotal = parseFloat(clean(cols[5])) || 0;
+                const valorPago = parseFloat(clean(cols[6])) || 0;
+
+                const novo: Cliente = {
+                    id: generateId(), 
+                    userId: currentUser.id, // VINCULAR AO USUARIO ATUAL
+                    nome: clean(cols[1]),
+                    telefone: clean(cols[2]),
+                    whatsapp: clean(cols[3]),
+                    servico: clean(cols[4]),
+                    valorTotal: valorTotal,
+                    valorPago: valorPago,
+                    valorRestante: valorTotal - valorPago,
+                    percentualPago: valorTotal > 0 ? Math.round((valorPago / valorTotal) * 100) : 0,
+                    dataAtendimento: clean(cols[7]),
+                    status: (clean(cols[8]) as StatusCliente) || 'aguardando',
+                    cidade: clean(cols[9]) || 'João Pessoa',
+                    endereco: clean(cols[10]) || '',
+                    observacoes: clean(cols[11]) || ''
+                };
+                newClients.push(novo);
+            }
+        }
+
+        if (newClients.length > 0) {
+            const updatedList = [...clientes, ...newClients];
+            setClientes(updatedList);
+            saveClientsToStorage(updatedList);
+            alert(`${newClients.length} clientes importados com sucesso!`);
+        } else {
+            alert('Não foi possível ler os dados do arquivo CSV.');
+        }
+    };
+    reader.readAsText(file);
   };
 
   const handleConfigSave = (newConfig: Configuracoes) => {
+    if (!currentUser) return;
     setConfig(newConfig);
+    localStorage.setItem(`mag_system_config_${currentUser.id}`, JSON.stringify(newConfig));
   };
 
   // Derived State
@@ -87,6 +223,11 @@ const App: React.FC = () => {
     ativos: activeClients.length,
     faturamento: clientes.reduce((acc, c) => acc + c.valorTotal, 0)
   }), [clientes, completedClients, activeClients]);
+
+  // RENDERIZAÇÃO CONDICIONAL DE LOGIN
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -121,6 +262,7 @@ const App: React.FC = () => {
                       clientes={activeClients.slice(0, 5)} 
                       onUpdateStatus={handleUpdateStatus}
                       onFinalize={handleFinalizeClient}
+                      onEdit={handleEditClick}
                   />
                </div>
                
@@ -142,7 +284,10 @@ const App: React.FC = () => {
                     <p className="text-slate-500 text-sm">Gerencie seus contratos e acompanhe o status.</p>
                 </div>
                 <button 
-                  onClick={() => setShowForm(true)}
+                  onClick={() => {
+                    setEditingClient(null);
+                    setShowForm(true);
+                  }}
                   className="bg-success-500 hover:bg-success-600 text-white px-5 py-2.5 rounded-xl flex items-center justify-center font-medium shadow-lg shadow-success-500/30 hover:shadow-success-500/40 hover:-translate-y-0.5 transition-all w-full sm:w-auto"
                 >
                   <Plus size={20} className="mr-2" />
@@ -154,6 +299,8 @@ const App: React.FC = () => {
                 clientes={activeClients} 
                 onUpdateStatus={handleUpdateStatus}
                 onFinalize={handleFinalizeClient}
+                onEdit={handleEditClick}
+                onImport={handleImportCSV}
              />
           </div>
         );
@@ -200,6 +347,14 @@ const App: React.FC = () => {
                     <p className="text-slate-500 text-sm">Personalize os dados da sua empresa no sistema.</p>
                 </div>
                 <ConfiguracoesPage config={config} onSave={handleConfigSave} stats={systemStats} />
+                <div className="mt-8 pt-8 border-t border-slate-200">
+                    <button 
+                        onClick={handleLogout}
+                        className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold text-sm transition-colors w-full sm:w-auto"
+                    >
+                        Sair do Sistema
+                    </button>
+                </div>
             </div>
         );
       default:
@@ -217,6 +372,8 @@ const App: React.FC = () => {
             setMobileMenuOpen(false);
         }} 
         config={config} 
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Mobile Sidebar (Drawer) */}
@@ -235,6 +392,8 @@ const App: React.FC = () => {
                 config={config} 
                 mobile
                 onCloseMobile={() => setMobileMenuOpen(false)}
+                currentUser={currentUser}
+                onLogout={handleLogout}
             />
         </div>
       </div>
@@ -266,7 +425,14 @@ const App: React.FC = () => {
       </main>
 
       {showForm && (
-        <FormCliente onClose={() => setShowForm(false)} onSave={handleAddCliente} />
+        <FormCliente 
+            onClose={() => {
+                setShowForm(false);
+                setEditingClient(null);
+            }} 
+            onSave={handleSaveCliente}
+            initialData={editingClient}
+        />
       )}
     </div>
   );
